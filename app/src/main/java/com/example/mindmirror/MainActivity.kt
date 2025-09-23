@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -23,9 +24,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import android.graphics.Rect
-import java.io.IOException
 import kotlin.math.log10
 
 class MainActivity : AppCompatActivity() {
@@ -123,7 +122,6 @@ class MainActivity : AppCompatActivity() {
                         }
                         val bounds = f.boundingBox
                         boxes.add(Pair(bounds, "$label (${String.format("%.2f", smile)})"))
-                        // save detection to DB
                         lifecycleScope.launch(Dispatchers.IO) {
                             db.insert(System.currentTimeMillis(), label, smile)
                         }
@@ -142,35 +140,57 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startRecording() {
-        mediaRecorder = MediaRecorder()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Microphone permission not granted", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val outFile = "${cacheDir.absolutePath}/tmp_audio.3gp"
+
+        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder.Builder(this)
+                .setAudioSource(MediaRecorder.AudioSource.MIC)
+                .setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                .setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                .setOutputFile(outFile)
+                .build()
+        } else {
+            MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                setOutputFile(outFile)
+            }
+        }
+
         val mr = mediaRecorder ?: return
         try {
-            mr.setAudioSource(MediaRecorder.AudioSource.MIC)
-            mr.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            val outFile = "${'$'}{cacheDir.absolutePath}/tmp_audio.3gp"
-            mr.setOutputFile(outFile)
-            mr.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
             mr.prepare()
             mr.start()
+
             recording = true
             findViewById<Button>(R.id.btnAudio).text = "Stop Audio"
-            // periodically read amplitude and show simple stress proxy after 3 seconds
+
             Thread {
                 try {
                     Thread.sleep(3000)
-                    val amp = mr.maxAmplitude // getMaxAmplitude after some audio is recorded
+                    val amp = mr.maxAmplitude
                     val dbLevel = if (amp > 0) 20 * log10(amp.toDouble()) else 0.0
-                    val stressLabel = if (dbLevel > 60) "High stress (loud)" else if (dbLevel > 40) "Moderate" else "Calm"
+                    val stressLabel = when {
+                        dbLevel > 60 -> "High stress (loud)"
+                        dbLevel > 40 -> "Moderate"
+                        else -> "Calm"
+                    }
                     runOnUiThread {
-                        Toast.makeText(this, "Audio check: ${'$'}stressLabel (amp=${'$'}amp)", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Audio check: $stressLabel (amp=$amp)", Toast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("MindMirror", "Error measuring amplitude", e)
                 }
             }.start()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            Toast.makeText(this, "Audio start failed", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("MindMirror", "Audio start FAILED", e)
+            Toast.makeText(this, "Audio start failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -179,7 +199,7 @@ class MainActivity : AppCompatActivity() {
             mediaRecorder?.stop()
             mediaRecorder?.release()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("MindMirror", "Stop recording failed", e)
         }
         mediaRecorder = null
         recording = false
