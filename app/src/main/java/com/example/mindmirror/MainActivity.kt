@@ -1,5 +1,6 @@
 package com.example.mindmirror
 
+import com.package.name.R
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
