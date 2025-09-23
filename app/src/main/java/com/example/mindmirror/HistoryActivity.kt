@@ -1,5 +1,6 @@
 package com.example.mindmirror
 
+import com.package.name.R
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.github.mikephil.charting.charts.LineChart
