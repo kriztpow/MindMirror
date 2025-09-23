@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -147,20 +146,11 @@ class MainActivity : AppCompatActivity() {
 
         val outFile = "${cacheDir.absolutePath}/tmp_audio.3gp"
 
-        mediaRecorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder.Builder(this)
-                .setAudioSource(MediaRecorder.AudioSource.MIC)
-                .setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                .setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                .setOutputFile(outFile)
-                .build()
-        } else {
-            MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-                setOutputFile(outFile)
-            }
+        mediaRecorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            setOutputFile(outFile)
         }
 
         val mr = mediaRecorder ?: return
