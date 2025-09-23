@@ -5,7 +5,8 @@
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application android:label="MindMirror">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
