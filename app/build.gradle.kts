@@ -32,8 +32,8 @@ android {
 }
 
 dependencies {
-    // assistant added deps
-    implementation("com.github.PhilJay:MPAndroidChart:3.1.0")
+    
+implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 implementation("androidx.camera:camera-core:1.2.0")
 implementation("androidx.camera:camera-camera2:1.2.0")
