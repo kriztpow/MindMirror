@@ -4,7 +4,10 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
-    <application android:label="MindMirror">
+    <application 
+        android:label="MindMirror"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:theme="@style/AppTheme">
         <activity android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
